@@ -1,0 +1,6 @@
+# Note: The ONNX models are already included in ai-service/models/.
+# You do NOT need to run this to start the application.
+# Install these only if you want to retrain models from scratch:
+
+torch>=2.2.0
+torchvision>=0.17.0

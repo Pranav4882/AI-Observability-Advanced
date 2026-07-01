@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Observability - Interactive Sandbox</title>
+    <!-- Outfit Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            glow: 'rgba(99, 102, 241, 0.15)',
+                            border: 'rgba(255, 255, 255, 0.08)',
+                            card: 'rgba(30, 41, 59, 0.65)',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: radial-gradient(circle at top right, #1e1b4b 0%, #0f172a 60%, #020617 100%);
+            background-attachment: fixed;
+        }
+
+        .glass-panel {
+            background: var(--tw-color-brand-card);
+            backdrop-filter: blur(20px) saturate(190%);
+            -webkit-backdrop-filter: blur(20px) saturate(190%);
+            border: 1px solid var(--tw-color-brand-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+            border-color: transparent;
+        }
+
+        .custom-glow {
+            text-shadow: 0 0 10px rgba(124, 58, 237, 0.5);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.3);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.3);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.6);
+        }
+    </style>
+</head>
+
+<body class="text-slate-100 min-h-full font-sans antialiased pb-12">
+
+    <!-- Header Section -->
+    <header class="w-full py-6 px-8 border-b border-slate-800/80 glass-panel sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div>
+                    <h1
+                        class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-indigo-200 to-purple-300 bg-clip-text text-transparent">
+                        AI Observability</h1>
+                    <p class="text-xs text-indigo-300 font-medium">Model Sandbox</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- Left Column: Model Playground (8 cols) -->
+        <div class="lg:col-span-8 flex flex-col gap-6">
+
+            <!-- Model Tabs Selector -->
+            <div class="glass-panel p-2 rounded-2xl flex gap-2">
+                <button onclick="switchTab('mnist')" id="tab-mnist"
+                    class="tab-btn active flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 border border-slate-700/50 flex items-center justify-center gap-2 hover:bg-slate-800/40">
+                    MNIST Digits
+                </button>
+                <button onclick="switchTab('fashion')" id="tab-fashion"
+                    class="tab-btn flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 border border-slate-700/50 flex items-center justify-center gap-2 hover:bg-slate-800/40">
+                    Fashion MNIST
+                </button>
+                <button onclick="switchTab('sentiment')" id="tab-sentiment"
+                    class="tab-btn flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 border border-slate-700/50 flex items-center justify-center gap-2 hover:bg-slate-800/40">
+                    Sentiment Analysis
+                </button>
+                <button onclick="switchTab('storage')" id="tab-storage"
+                    class="tab-btn flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 border border-slate-700/50 flex items-center justify-center gap-2 hover:bg-slate-800/40">
+                    Storage Stats
+                </button>
+            </div>
+
+            <!-- Tab Content: MNIST -->
+            <div id="content-mnist" class="glass-panel p-6 rounded-3xl flex flex-col md:flex-row gap-8 min-h-[420px]">
+                <div class="flex-1 flex flex-col items-center justify-between">
+                    <div class="w-full text-center md:text-left">
+                        <span class="text-xs font-bold uppercase tracking-wider text-purple-400">Interactive
+                            Canvas</span>
+                        <h2 class="text-2xl font-bold mt-1">Draw a Digit</h2>
+                        <p class="text-slate-400 text-sm mt-1">Draw a single number (0-9) inside the grid using your
+                            mouse or finger.</p>
+                    </div>
+
+                    <!-- Canvas Drawing Area -->
+                    <div class="relative my-6 group">
+                        <div
+                            class="absolute -inset-1.5 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300">
+                        </div>
+                        <canvas id="digitCanvas" width="280" height="280"
+                            class="relative rounded-2xl bg-black border border-slate-700 cursor-crosshair shadow-2xl touch-none"></canvas>
+                    </div>
+
+                    <div class="w-full flex gap-3">
+                        <button onclick="clearCanvas()"
+                            class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-semibold border border-slate-700/80 transition duration-200">
+                            Clear Canvas
+                        </button>
+                        <button onclick="predictDigit()"
+                            class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-sm font-semibold shadow-lg shadow-indigo-600/20 transition duration-200">
+                            Predict Digit
+                        </button>
+                    </div>
+                </div>
+                <!-- Interactive Result Display -->
+                <div id="mnistResult"
+                    class="flex-1 flex flex-col justify-center border-t md:border-t-0 md:border-l border-slate-800/80 pt-6 md:pt-0 md:pl-8">
+                    <div class="text-center py-8 text-slate-500" id="mnistPlaceholder">
+                        <svg class="mx-auto h-12 w-12 text-slate-600 mb-3" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        <p class="text-sm">Draw and click predict to run model inference.</p>
+                    </div>
+                    <div id="mnistResultContent" class="hidden flex flex-col justify-between h-full">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Fashion MNIST -->
+            <div id="content-fashion"
+                class="glass-panel p-6 rounded-3xl hidden flex-col md:flex-row gap-8 min-h-[420px]">
+                <div class="flex-1 flex flex-col items-center justify-between">
+                    <div class="w-full text-center md:text-left">
+                        <span class="text-xs font-bold uppercase tracking-wider text-purple-400">File Upload</span>
+                        <h2 class="text-2xl font-bold mt-1">Fashion Item Classifier</h2>
+                        <p class="text-slate-400 text-sm mt-1">Upload an image of a clothing item (shirt, boot, bag,
+                            dress, trousers, etc.) to classify.</p>
+                    </div>
+
+                    <!-- Drag & Drop Zone -->
+                    <div id="dropZone"
+                        class="w-full my-6 flex-1 border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl flex flex-col items-center justify-center p-6 cursor-pointer bg-slate-900/30 hover:bg-indigo-950/10 transition duration-300">
+                        <input type="file" id="fashionFileInput" class="hidden" accept="image/*"
+                            onchange="handleFashionFile(this.files)">
+                        <div id="dropZonePrompt" class="text-center">
+                            <svg class="mx-auto h-12 w-12 text-slate-500 mb-2" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <p class="text-sm font-semibold">Drag & drop your clothing image here</p>
+                            <p class="text-xs text-slate-500 mt-1">or click to browse from files</p>
+                        </div>
+                        <img id="fashionPreview" class="hidden max-h-48 rounded-xl object-contain shadow-lg"
+                            alt="Preview">
+                    </div>
+
+                    <div class="w-full flex gap-3">
+                        <button onclick="resetFashion()"
+                            class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-semibold border border-slate-700/80 transition duration-200">
+                            Clear Image
+                        </button>
+                        <button onclick="predictFashion()" id="btnPredictFashion" disabled
+                            class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-sm font-semibold shadow-lg shadow-indigo-600/20 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Classify Item
+                        </button>
+                    </div>
+                </div>
+                <!-- Interactive Result Display -->
+                <div id="fashionResult"
+                    class="flex-1 flex flex-col justify-center border-t md:border-t-0 md:border-l border-slate-800/80 pt-6 md:pt-0 md:pl-8">
+                    <div class="text-center py-8 text-slate-500" id="fashionPlaceholder">
+                        <svg class="mx-auto h-12 w-12 text-slate-600 mb-3" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                        </svg>
+                        <p class="text-sm">Upload a fashion image to view classification results.</p>
+                    </div>
+                    <div id="fashionResultContent" class="hidden flex flex-col justify-between h-full">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Sentiment -->
+            <div id="content-sentiment"
+                class="glass-panel p-6 rounded-3xl hidden flex-col md:flex-row gap-8 min-h-[420px]">
+                <div class="flex-1 flex flex-col items-center justify-between">
+                    <div class="w-full text-center md:text-left">
+                        <span class="text-xs font-bold uppercase tracking-wider text-purple-400">Natural Language</span>
+                        <h2 class="text-2xl font-bold mt-1">Sentiment Sentiment Analyzer</h2>
+                        <p class="text-slate-400 text-sm mt-1">Type an evaluation comment or feedback to analyze the
+                            underlying sentiment polarity.</p>
+                    </div>
+
+                    <div class="w-full my-6 flex-1 flex flex-col gap-4">
+                        <textarea id="sentimentInput" rows="4"
+                            class="w-full p-4 rounded-xl bg-slate-900/60 border border-slate-700 focus:border-indigo-500 focus:outline-none text-slate-100 text-sm placeholder-slate-500 resize-none"
+                            placeholder="Type customer review or statement here..."></textarea>
+
+                        <!-- Quick Presets -->
+                        <div>
+                            <span
+                                class="text-xs text-slate-500 font-semibold uppercase tracking-wider block mb-2">Preset
+                                Quick Actions</span>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="setSentimentPreset(this.textContent)"
+                                    class="text-xs py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700/60 text-slate-300 transition duration-150">This
+                                    is absolutely fantastic and works perfectly!</button>
+                                <button onclick="setSentimentPreset(this.textContent)"
+                                    class="text-xs py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700/60 text-slate-300 transition duration-150">Worst
+                                    purchase ever, completely broke after one day.</button>
+                                <button onclick="setSentimentPreset(this.textContent)"
+                                    class="text-xs py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700/60 text-slate-300 transition duration-150">Quality
+                                    is decent, but standard shipping was slow.</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="w-full flex gap-3">
+                        <button onclick="clearSentiment()"
+                            class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-semibold border border-slate-700/80 transition duration-200">
+                            Clear Input
+                        </button>
+                        <button onclick="predictSentiment()"
+                            class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-sm font-semibold shadow-lg shadow-indigo-600/20 transition duration-200">
+                            Analyze Text
+                        </button>
+                    </div>
+                </div>
+                <!-- Interactive Result Display -->
+                <div id="sentimentResult"
+                    class="flex-1 flex flex-col justify-center border-t md:border-t-0 md:border-l border-slate-800/80 pt-6 md:pt-0 md:pl-8">
+                    <div class="text-center py-8 text-slate-500" id="sentimentPlaceholder">
+                        <svg class="mx-auto h-12 w-12 text-slate-600 mb-3" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <p class="text-sm">Type feedback or click a preset to analyze sentiment score.</p>
+                    </div>
+                    <div id="sentimentResultContent" class="hidden flex flex-col justify-between h-full">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Database & Cache -->
+            <div id="content-storage" class="glass-panel p-6 rounded-3xl hidden flex-col gap-6 min-h-[420px]">
+                <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-purple-400">System Storage</span>
+                        <h2 class="text-2xl font-bold mt-1">Database & Cache Telemetry</h2>
+                        <p class="text-slate-400 text-sm mt-1">Live proof of PostgreSQL persistence and Redis key-value
+                            storage state.</p>
+                    </div>
+                    <button onclick="fetchStorageStats()"
+                        class="py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold tracking-wider uppercase transition duration-150">
+                        Refresh Stats
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- PostgreSQL section -->
+                    <div class="bg-slate-900/30 border border-slate-800/80 rounded-2xl p-5 flex flex-col gap-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-bold text-indigo-400 flex items-center gap-1.5">
+                                PostgreSQL Database
+                            </span>
+                            <span id="postgresStatusText"
+                                class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Connected</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="bg-slate-950/50 rounded-xl p-3 text-center border border-slate-800/50">
+                                <span
+                                    class="text-[10px] text-slate-400 font-bold block uppercase leading-tight">Inferences</span>
+                                <span id="pgLogCount" class="text-lg font-black text-white mt-1 block">0</span>
+                            </div>
+                            <div class="bg-slate-950/50 rounded-xl p-3 text-center border border-slate-800/50">
+                                <span class="text-[10px] text-slate-400 font-bold block uppercase leading-tight">Drift
+                                    Runs</span>
+                                <span id="pgDriftCount" class="text-lg font-black text-white mt-1 block">0</span>
+                            </div>
+                            <div class="bg-slate-950/50 rounded-xl p-3 text-center border border-slate-800/50">
+                                <span
+                                    class="text-[10px] text-slate-400 font-bold block uppercase leading-tight">Alerts</span>
+                                <span id="pgAlertCount" class="text-lg font-black text-white mt-1 block">0</span>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Latest
+                                Inference Logs</span>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs font-mono text-slate-300">
+                                    <thead>
+                                        <tr class="border-b border-slate-800 text-slate-500">
+                                            <th class="pb-1.5 font-bold">Time</th>
+                                            <th class="pb-1.5 font-bold">Model</th>
+                                            <th class="pb-1.5 font-bold">Predict</th>
+                                            <th class="pb-1.5 font-bold text-right">Conf</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pgLogsTable">
+                                        <tr>
+                                            <td colspan="4" class="text-center py-4 text-slate-600">No predictions
+                                                recorded yet.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Redis section -->
+                    <div class="bg-slate-900/30 border border-slate-800/80 rounded-2xl p-5 flex flex-col gap-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-bold text-indigo-400 flex items-center gap-1.5">
+                                Redis Key-Value Store
+                            </span>
+                            <span id="redisStatusText"
+                                class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Connected</span>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Active
+                                Keys and Counters</span>
+                            <div id="redisKeysContainer" class="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
+                                <div class="text-center py-8 text-slate-600 text-xs font-mono">No keys found in Redis.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Performance & Drift Trend Charts -->
+            <div class="glass-panel p-6 rounded-3xl flex flex-col gap-6 mt-6">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Telemetry
+                        Visualizations</span>
+                    <h2 class="text-xl font-bold mt-0.5">Performance & Drift Trends</h2>
+                    <p class="text-xs text-slate-400 mt-1">Real-time timeseries showing execution latency, anomaly
+                        scores, and model drift history.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Latency & Anomaly Chart -->
+                    <div class="bg-slate-900/30 border border-slate-800/80 rounded-2xl p-4 h-64">
+                        <canvas id="latencyAnomalyChart" class="w-full h-full"></canvas>
+                    </div>
+
+                    <!-- Drift Score Chart -->
+                    <div class="bg-slate-900/30 border border-slate-800/80 rounded-2xl p-4 h-64">
+                        <canvas id="driftTrendChart" class="w-full h-full"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Observability Dashboard & WebSocket Stream (4 cols) -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
+
+            <!-- Real-Time Metrics Gauges -->
+            <div class="glass-panel p-6 rounded-3xl flex flex-col gap-6">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Live Resource
+                        Utilization</span>
+                    <h2 class="text-xl font-bold mt-0.5">System Health</h2>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <!-- CPU Gauge Card -->
+                    <div
+                        class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-3 flex flex-col items-center justify-center">
+                        <span class="text-[10px] font-medium text-slate-400 mb-1">CPU Usage</span>
+                        <div class="relative h-16 w-16 flex items-center justify-center">
+                            <svg class="absolute inset-0 transform -rotate-90" viewBox="0 0 36 36">
+                                <path class="text-slate-800" stroke-width="3" stroke="currentColor" fill="none"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path id="cpuGauge" class="text-indigo-500 transition-all duration-500 ease-out"
+                                    stroke-dasharray="0, 100" stroke-width="3" stroke-linecap="round"
+                                    stroke="currentColor" fill="none"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <span id="cpuText" class="text-xs font-bold">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- Memory Gauge Card -->
+                    <div
+                        class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-3 flex flex-col items-center justify-center">
+                        <span class="text-[10px] font-medium text-slate-400 mb-1">Memory Usage</span>
+                        <div class="relative h-16 w-16 flex items-center justify-center">
+                            <svg class="absolute inset-0 transform -rotate-90" viewBox="0 0 36 36">
+                                <path class="text-slate-800" stroke-width="3" stroke="currentColor" fill="none"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path id="memGauge" class="text-purple-500 transition-all duration-500 ease-out"
+                                    stroke-dasharray="0, 100" stroke-width="3" stroke-linecap="round"
+                                    stroke="currentColor" fill="none"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <span id="memText" class="text-xs font-bold">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- GPU Gauge Card -->
+                    <div
+                        class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-3 flex flex-col items-center justify-center">
+                        <span class="text-[10px] font-medium text-slate-400 mb-1">GPU Usage</span>
+                        <div class="relative h-16 w-16 flex items-center justify-center">
+                            <svg class="absolute inset-0 transform -rotate-90" viewBox="0 0 36 36">
+                                <path class="text-slate-800" stroke-width="3" stroke="currentColor" fill="none"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path id="gpuGauge" class="text-emerald-500 transition-all duration-500 ease-out"
+                                    stroke-dasharray="0, 100" stroke-width="3" stroke-linecap="round"
+                                    stroke="currentColor" fill="none"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <div class="flex flex-col items-center leading-none">
+                                <span id="gpuText" class="text-[11px] font-bold">0%</span>
+                                <span id="gpuTempText" class="text-[8px] text-slate-400 font-semibold mt-0.5">0°C</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live ML Metrics -->
+            <div class="glass-panel p-6 rounded-3xl flex flex-col gap-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Live ML
+                        Observability</span>
+                    <h2 class="text-xl font-bold mt-0.5">Model Performance</h2>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 text-center">
+                        <span class="text-[11px] text-slate-400 font-medium block">Throughput</span>
+                        <span id="liveRpsText" class="text-lg font-black text-indigo-400 mt-1 block">0.0 rps</span>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 text-center">
+                        <span class="text-[11px] text-slate-400 font-medium block">Avg Latency</span>
+                        <span id="liveLatencyText" class="text-lg font-black text-purple-400 mt-1 block">0.0 ms</span>
+                    </div>
+                </div>
+
+                <!-- Drift Status Indicators -->
+                <div class="border-t border-slate-800/80 pt-4">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Active Data Drift
+                        Status</span>
+                    <div class="flex flex-col gap-2">
+                        <div
+                            class="flex items-center justify-between bg-slate-950/40 border border-slate-800/50 rounded-xl p-2.5">
+                            <span class="text-xs font-bold text-slate-300">Fashion MNIST</span>
+                            <span id="driftBadge-fashion_mnist"
+                                class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800/60 text-slate-400">No
+                                Data</span>
+                        </div>
+                        <div
+                            class="flex items-center justify-between bg-slate-950/40 border border-slate-800/50 rounded-xl p-2.5">
+                            <span class="text-xs font-bold text-slate-300">MNIST Digits</span>
+                            <span id="driftBadge-mnist_digits"
+                                class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800/60 text-slate-400">No
+                                Data</span>
+                        </div>
+                        <div
+                            class="flex items-center justify-between bg-slate-950/40 border border-slate-800/50 rounded-xl p-2.5">
+                            <span class="text-xs font-bold text-slate-300">Sentiment Analysis</span>
+                            <span id="driftBadge-sentiment"
+                                class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800/60 text-slate-400">No
+                                Data</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- WebSocket Live Stream Log -->
+            <div class="glass-panel p-6 rounded-3xl flex-1 flex flex-col min-h-[380px] max-h-[500px]">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">WebSocket Stream</span>
+                        <h2 class="text-xl font-bold">Live Activity Log</h2>
+                    </div>
+                    <button onclick="clearLogs()"
+                        class="text-xs text-slate-400 hover:text-slate-200 underline transition duration-150">Clear</button>
+                </div>
+                <!-- Log Console Box -->
+                <div id="wsConsole"
+                    class="flex-1 w-full bg-black/60 border border-slate-800/80 rounded-2xl p-4 overflow-y-auto font-mono text-xs text-emerald-400/90 flex flex-col gap-2 shadow-inner">
+                    <div class="text-slate-500">Initializing Observability Stream...</div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        // Tab switching logic
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+
+            document.getElementById('content-mnist').style.display = tabId === 'mnist' ? 'flex' : 'none';
+            document.getElementById('content-fashion').style.display = tabId === 'fashion' ? 'flex' : 'none';
+            document.getElementById('content-sentiment').style.display = tabId === 'sentiment' ? 'flex' : 'none';
+            document.getElementById('content-storage').style.display = tabId === 'storage' ? 'flex' : 'none';
+
+            if (tabId === 'storage') {
+                fetchStorageStats();
+            }
+        }
+
+        async function fetchStorageStats() {
+            try {
+                const response = await fetch('/db-redis-stats');
+                if (!response.ok) throw new Error('Failed to fetch storage stats');
+                const data = await response.json();
+
+                // Update Postgres status & counts
+                document.getElementById('postgresStatusText').textContent = data.postgres.status === 'connected' ? 'Connected' : 'Disconnected';
+                document.getElementById('postgresStatusText').className = data.postgres.status === 'connected'
+                    ? "text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                    : "text-xs font-semibold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20";
+
+                document.getElementById('pgLogCount').textContent = data.postgres.counts.inference_logs;
+                document.getElementById('pgDriftCount').textContent = data.postgres.counts.drift_scores;
+                document.getElementById('pgAlertCount').textContent = data.postgres.counts.alert_history;
+
+                // Render latest table logs
+                const logsTable = document.getElementById('pgLogsTable');
+                if (data.postgres.recent_logs && data.postgres.recent_logs.length > 0) {
+                    logsTable.innerHTML = data.postgres.recent_logs.map(log => `
+                        <tr class="border-b border-slate-800/40 hover:bg-slate-900/10 text-[11px]">
+                            <td class="py-2 text-slate-500">${log.timestamp}</td>
+                            <td class="py-2 text-indigo-400 font-bold">${log.model_name.replace('sentiment', 'Sentiment')}</td>
+                            <td class="py-2 text-slate-300 font-semibold">${log.prediction}</td>
+                            <td class="py-2 text-right font-black text-white">${(log.confidence * 100).toFixed(0)}%</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    logsTable.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-600">No predictions recorded yet.</td></tr>`;
+                }
+
+                // Update Redis status & keys
+                document.getElementById('redisStatusText').textContent = data.redis.status === 'connected' ? 'Connected' : 'Disconnected';
+                document.getElementById('redisStatusText').className = data.redis.status === 'connected'
+                    ? "text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                    : "text-xs font-semibold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20";
+
+                const redisContainer = document.getElementById('redisKeysContainer');
+                const keys = Object.keys(data.redis.keys_values);
+                if (keys.length > 0) {
+                    redisContainer.innerHTML = keys.map(key => {
+                        const val = data.redis.keys_values[key];
+                        return `
+                            <div class="flex items-center justify-between p-2 bg-slate-950/60 border border-slate-800 rounded-xl font-mono text-[11px]">
+                                <span class="text-slate-400 font-bold">${key}</span>
+                                <span class="text-emerald-400 font-black">${val}</span>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    redisContainer.innerHTML = `<div class="text-center py-8 text-slate-600 text-xs font-mono">No keys found in Redis.</div>`;
+                }
+            } catch (error) {
+                console.error('Failed to load storage stats:', error);
+            }
+        }
+
+        const canvas = document.getElementById('digitCanvas');
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+
+        // Black background, white drawing (matching training set)
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 18;
+        ctx.lineCap = 'round';
+        ctx.shadowBlur = 1.5;
+        ctx.shadowColor = '#ffffff';
+
+        // Mouse events
+        canvas.addEventListener('mousedown', (e) => { drawing = true; draw(e); });
+        canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
+        canvas.addEventListener('mousemove', draw);
+
+        // Touch events for mobile support
+        canvas.addEventListener('touchstart', (e) => { drawing = true; drawTouch(e); });
+        canvas.addEventListener('touchend', () => { drawing = false; ctx.beginPath(); });
+        canvas.addEventListener('touchmove', drawTouch);
+
+        function draw(e) {
+            if (!drawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        function drawTouch(e) {
+            if (!drawing) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('mnistPlaceholder').classList.remove('hidden');
+            document.getElementById('mnistResultContent').classList.add('hidden');
+        }
+
+        async function predictDigit() {
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('file', blob, 'digit.png');
+
+                showLoading('mnist');
+
+                try {
+                    const response = await fetch('/predict/image/digits', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.detail?.[0]?.msg || err.detail || 'Inference failed');
+                    }
+                    const data = await response.json();
+                    renderResult('mnist', data);
+                } catch (error) {
+                    renderError('mnist', error);
+                }
+            }, 'image/png');
+        }
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fashionFileInput');
+        const preview = document.getElementById('fashionPreview');
+        const dropZonePrompt = document.getElementById('dropZonePrompt');
+        const btnPredictFashion = document.getElementById('btnPredictFashion');
+        let selectedFashionFile = null;
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-indigo-500', 'bg-indigo-950/10');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-950/10');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-950/10');
+            if (e.dataTransfer.files.length) {
+                handleFashionFile(e.dataTransfer.files);
+            }
+        });
+
+        function handleFashionFile(files) {
+            if (!files.length) return;
+            const file = files[0];
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload an image file.');
+                return;
+            }
+            selectedFashionFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                dropZonePrompt.classList.add('hidden');
+                btnPredictFashion.removeAttribute('disabled');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetFashion() {
+            selectedFashionFile = null;
+            preview.src = '';
+            preview.classList.add('hidden');
+            dropZonePrompt.classList.remove('hidden');
+            btnPredictFashion.setAttribute('disabled', 'true');
+            fileInput.value = '';
+            document.getElementById('fashionPlaceholder').classList.remove('hidden');
+            document.getElementById('fashionResultContent').classList.add('hidden');
+        }
+
+        async function predictFashion() {
+            if (!selectedFashionFile) return;
+            const formData = new FormData();
+            formData.append('file', selectedFashionFile);
+
+            showLoading('fashion');
+
+            try {
+                const response = await fetch('/predict/image?model=fashion_mnist', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail?.[0]?.msg || err.detail || 'Inference failed');
+                }
+                const data = await response.json();
+                renderResult('fashion', data);
+            } catch (error) {
+                renderError('fashion', error);
+            }
+        }
+        function setSentimentPreset(text) {
+            document.getElementById('sentimentInput').value = text;
+            predictSentiment();
+        }
+
+        function clearSentiment() {
+            document.getElementById('sentimentInput').value = '';
+            document.getElementById('sentimentPlaceholder').classList.remove('hidden');
+            document.getElementById('sentimentResultContent').classList.add('hidden');
+        }
+
+        async function predictSentiment() {
+            const text = document.getElementById('sentimentInput').value.trim();
+            if (!text) return;
+
+            showLoading('sentiment');
+
+            try {
+                const response = await fetch('/predict/text', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail?.[0]?.msg || err.detail || 'Inference failed');
+                }
+                const data = await response.json();
+                renderResult('sentiment', data);
+            } catch (error) {
+                renderError('sentiment', error);
+            }
+        }
+
+        function showLoading(type) {
+            const container = document.getElementById(`${type}ResultContent`);
+            const placeholder = document.getElementById(`${type}Placeholder`);
+
+            placeholder.classList.add('hidden');
+            container.classList.remove('hidden');
+
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full gap-3 py-16">
+                    <svg class="animate-spin h-10 w-10 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-sm text-slate-400 font-medium">Running ONNX Inference...</span>
+                </div>
+            `;
+        }
+
+        function renderError(type, error) {
+            const container = document.getElementById(`${type}ResultContent`);
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full gap-2 py-16 text-red-400 text-center">
+                    <svg class="h-10 w-10 text-red-500 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span class="text-sm font-semibold">Inference Failed</span>
+                    <span class="text-xs text-slate-500">${error.message || error}</span>
+                </div>
+            `;
+        }
+
+        function renderResult(type, data) {
+            const container = document.getElementById(`${type}ResultContent`);
+
+            // Format labels for colors
+            let scoreBgColor = "bg-indigo-500";
+            if (type === 'sentiment') {
+                scoreBgColor = data.prediction === 'positive' ? 'bg-emerald-500' : 'bg-rose-500';
+            }
+
+            // Top-3 visualization
+            let top3HTML = '';
+            if (data.top_3 && data.top_3.length > 0) {
+                top3HTML = `
+                    <div class="mt-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-2">Confidence Distribution</span>
+                        <div class="flex flex-col gap-2">
+                            ${data.top_3.map(item => {
+                    const name = item.name;
+                    const score = item.probability;
+                    const width = Math.max(5, Math.round(score * 100));
+                    return `
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-xs text-slate-400 font-medium w-24 truncate">${name}</span>
+                                        <div class="flex-1 bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                                            <div class="h-full bg-indigo-500/70 rounded-full transition-all duration-700" style="width: ${width}%"></div>
+                                        </div>
+                                        <span class="text-xs text-indigo-300 font-bold w-10 text-right">${(score * 100).toFixed(1)}%</span>
+                                    </div>
+                                `;
+                }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div class="flex flex-col justify-between h-full py-2">
+                    <div>
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Top Prediction</span>
+                                <h3 class="text-3xl font-extrabold tracking-tight capitalize mt-0.5 custom-glow text-white">
+                                    ${data.prediction}
+                                </h3>
+                            </div>
+                            <div class="px-3.5 py-1.5 rounded-xl ${scoreBgColor}/10 border border-${scoreBgColor}/20 text-right">
+                                <span class="text-xs text-slate-400 block font-semibold leading-none">Confidence</span>
+                                <span class="text-lg font-black text-white leading-tight">${(data.confidence * 100).toFixed(2)}%</span>
+                            </div>
+                        </div>
+
+                        ${top3HTML}
+                    </div>
+
+                    <!-- Performance Latency Card -->
+                    <div class="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-4 mt-6">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                <svg class="h-3.5 w-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Execution Latency
+                            </span>
+                            <span class="text-xs font-bold text-indigo-400">${data.latency.total_ms.toFixed(2)} ms</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                            <div class="flex flex-col p-1.5 bg-slate-900/60 rounded-xl">
+                                <span class="text-slate-500 font-medium">Preprocess</span>
+                                <span class="font-bold text-slate-300 mt-0.5">${data.latency.preprocess_ms.toFixed(2)}ms</span>
+                            </div>
+                            <div class="flex flex-col p-1.5 bg-slate-900/60 rounded-xl">
+                                <span class="text-slate-500 font-medium">ONNX Inf</span>
+                                <span class="font-bold text-slate-300 mt-0.5">${data.latency.inference_ms.toFixed(2)}ms</span>
+                            </div>
+                            <div class="flex flex-col p-1.5 bg-slate-900/60 rounded-xl">
+                                <span class="text-slate-500 font-medium">Postprocess</span>
+                                <span class="font-bold text-slate-300 mt-0.5">${data.latency.postprocess_ms.toFixed(2)}ms</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const wsConsole = document.getElementById('wsConsole');
+        const wsStatusBadge = document.getElementById('wsStatusBadge');
+        const wsStatusDot = document.getElementById('wsStatusDot');
+        const wsStatusText = document.getElementById('wsStatusText');
+        const cpuGauge = document.getElementById('cpuGauge');
+        const cpuText = document.getElementById('cpuText');
+        const memGauge = document.getElementById('memGauge');
+        const memText = document.getElementById('memText');
+
+        let ws = null;
+        let reconnectTimeout = null;
+        let latencyChart = null;
+        let driftChart = null;
+        let recentLatencies = [];
+
+        function initCharts() {
+            const latencyCtx = document.getElementById('latencyAnomalyChart').getContext('2d');
+            latencyChart = new Chart(latencyCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Latency (ms)',
+                            data: [],
+                            borderColor: '#818cf8',
+                            backgroundColor: 'rgba(129, 140, 248, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Anomaly Score',
+                            data: [],
+                            borderColor: '#f43f5e',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1.5,
+                            borderDash: [4, 4],
+                            tension: 0.3,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#94a3b8', font: { size: 10, family: 'Outfit' } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                            ticks: { color: '#64748b', font: { size: 9, family: 'Outfit' } }
+                        },
+                        y: {
+                            position: 'left',
+                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                            ticks: { color: '#818cf8', font: { family: 'Outfit' } },
+                            title: { display: true, text: 'Latency (ms)', color: '#818cf8', font: { family: 'Outfit', size: 10 } }
+                        },
+                        y1: {
+                            position: 'right',
+                            grid: { drawOnChartArea: false },
+                            ticks: { color: '#f43f5e', font: { family: 'Outfit' } },
+                            title: { display: true, text: 'Anomaly', color: '#f43f5e', font: { family: 'Outfit', size: 10 } },
+                            min: 0,
+                            max: 1
+                        }
+                    }
+                }
+            });
+
+            const driftCtx = document.getElementById('driftTrendChart').getContext('2d');
+            driftChart = new Chart(driftCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Fashion MNIST PSI',
+                            data: [],
+                            borderColor: '#a78bfa',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            spanGaps: true
+                        },
+                        {
+                            label: 'MNIST Digits PSI',
+                            data: [],
+                            borderColor: '#6366f1',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            spanGaps: true
+                        },
+                        {
+                            label: 'Sentiment PSI',
+                            data: [],
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            spanGaps: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#94a3b8', font: { size: 10, family: 'Outfit' } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                            ticks: { color: '#64748b', font: { size: 9, family: 'Outfit' } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                            ticks: { color: '#a78bfa', font: { family: 'Outfit' } },
+                            title: { display: true, text: 'PSI Drift Score', color: '#a78bfa', font: { family: 'Outfit', size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function connectWebSocket() {
+            if (ws) {
+                ws.close();
+            }
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUri = `${protocol}//${window.location.host}/ws/live`;
+
+            logToConsole('Connecting to WebSocket performance stream...', 'slate');
+
+            ws = new WebSocket(wsUri);
+
+            ws.onopen = () => {
+                if (wsStatusBadge) wsStatusBadge.className = "flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                if (wsStatusDot) wsStatusDot.className = "h-2 w-2 rounded-full bg-emerald-400 animate-pulse";
+                if (wsStatusText) wsStatusText.textContent = "WS Connected";
+                logToConsole('WebSocket link established. Monitoring system...', 'emerald');
+
+                // Start heartbeat ping
+                setInterval(() => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send('ping');
+                    }
+                }, 15000);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                // Handle ping response
+                if (data.type === 'pong') return;
+
+                handleTelemetryUpdate(data);
+            };
+
+            ws.onclose = () => {
+                if (wsStatusBadge) wsStatusBadge.className = "flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20";
+                if (wsStatusDot) wsStatusDot.className = "h-2 w-2 rounded-full bg-red-400";
+                if (wsStatusText) wsStatusText.textContent = "WS Disconnected";
+                logToConsole('WebSocket disconnected. Retrying in 5 seconds...', 'red');
+
+                // Auto-reconnect after 5 seconds
+                clearTimeout(reconnectTimeout);
+                reconnectTimeout = setTimeout(connectWebSocket, 5000);
+            };
+
+            ws.onerror = (err) => {
+                console.error('WebSocket Error:', err);
+                ws.close();
+            };
+        }
+
+        function handleTelemetryUpdate(data) {
+            const timeStr = new Date().toLocaleTimeString();
+
+            if (data.type === 'prediction') {
+                logToConsole(`[${timeStr}] Prediction: ${data.model} -> "${data.prediction}" (conf: ${(data.confidence * 100).toFixed(1)}%, latency: ${data.latency_ms}ms)`, 'sky');
+
+                // Update average latency
+                recentLatencies.push(data.latency_ms);
+                if (recentLatencies.length > 10) recentLatencies.shift();
+                const avgLatency = recentLatencies.reduce((a, b) => a + b, 0) / recentLatencies.length;
+                document.getElementById('liveLatencyText').textContent = `${avgLatency.toFixed(1)} ms`;
+
+                // Update latency trend chart
+                if (latencyChart) {
+                    latencyChart.data.labels.push(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+                    latencyChart.data.datasets[0].data.push(data.latency_ms);
+                    latencyChart.data.datasets[1].data.push(data.anomaly_score !== undefined ? data.anomaly_score : 0.0);
+
+                    if (latencyChart.data.labels.length > 20) {
+                        latencyChart.data.labels.shift();
+                        latencyChart.data.datasets[0].data.shift();
+                        latencyChart.data.datasets[1].data.shift();
+                    }
+                    latencyChart.update('none'); // Update without animation for performance
+                }
+            } else if (data.type === 'drift_update') {
+                const color = data.is_drifted ? 'red' : 'amber';
+                logToConsole(`[${timeStr}] Drift Check [${data.model}]: PSI=${data.psi_score} (Drifted=${data.is_drifted ? 'YES' : 'NO'})`, color);
+
+                // Update drift badge
+                const badge = document.getElementById(`driftBadge-${data.model}`);
+                if (badge) {
+                    badge.textContent = `PSI: ${data.psi_score.toFixed(3)} (${data.is_drifted ? 'DRIFT' : 'STABLE'})`;
+                    badge.className = data.is_drifted
+                        ? "text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20"
+                        : "text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                }
+
+                if (driftChart) {
+                    const labelTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    const modelIndexMap = {
+                        'fashion_mnist': 0,
+                        'mnist_digits': 1,
+                        'sentiment': 2
+                    };
+                    const targetIdx = modelIndexMap[data.model];
+
+                    if (targetIdx !== undefined) {
+                        // Always push a label matching the new update
+                        driftChart.data.labels.push(labelTime);
+
+                        // Push new data point to target dataset, null to other datasets
+                        for (let i = 0; i < 3; i++) {
+                            if (i === targetIdx) {
+                                driftChart.data.datasets[i].data.push(data.psi_score);
+                            } else {
+                                driftChart.data.datasets[i].data.push(null);
+                            }
+                        }
+
+                        // Cap queue size at 20 elements
+                        if (driftChart.data.labels.length > 20) {
+                            driftChart.data.labels.shift();
+                            driftChart.data.datasets[0].data.shift();
+                            driftChart.data.datasets[1].data.shift();
+                            driftChart.data.datasets[2].data.shift();
+                        }
+                        driftChart.update();
+                    }
+                }
+            } else if (data.alert_type) {
+                logToConsole(`[${timeStr}] ALERT Fired! ${data.message} [Severity: ${data.severity.toUpperCase()}]`, 'red');
+            }
+
+            if (data.cpu_percent !== undefined) {
+                updateResourceGauge('cpu', data.cpu_percent);
+            }
+            if (data.memory_percent !== undefined) {
+                updateResourceGauge('mem', data.memory_percent);
+            }
+            if (data.gpu_percent !== undefined) {
+                updateResourceGauge('gpu', data.gpu_percent);
+            }
+            if (data.gpu_temperature_celsius !== undefined) {
+                const tempEl = document.getElementById('gpuTempText');
+                if (tempEl) tempEl.textContent = `${Math.round(data.gpu_temperature_celsius)}°C`;
+            }
+            if (data.requests_per_sec !== undefined) {
+                document.getElementById('liveRpsText').textContent = `${data.requests_per_sec.toFixed(1)} rps`;
+            }
+        }
+
+        async function fetchDriftStatus() {
+            try {
+                const response = await fetch('/drift/status');
+                if (!response.ok) throw new Error('Failed to fetch drift status');
+                const data = await response.json();
+                const models = data.models || {};
+                for (const [model, result] of Object.entries(models)) {
+                    const badge = document.getElementById(`driftBadge-${model}`);
+                    if (badge) {
+                        if (result.psi_score !== undefined) {
+                            badge.textContent = `PSI: ${result.psi_score.toFixed(3)} (${result.is_drifted ? 'DRIFT' : 'STABLE'})`;
+                            badge.className = result.is_drifted
+                                ? "text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20"
+                                : "text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                        } else {
+                            badge.textContent = "No Data";
+                            badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800/60 text-slate-400";
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load drift status:', error);
+            }
+        }
+
+
+        function updateResourceGauge(type, val) {
+            const roundedVal = Math.round(val);
+            let gauge, text;
+            if (type === 'cpu') {
+                gauge = cpuGauge;
+                text = cpuText;
+            } else if (type === 'mem') {
+                gauge = memGauge;
+                text = memText;
+            } else {
+                gauge = document.getElementById('gpuGauge');
+                text = document.getElementById('gpuText');
+            }
+            if (!gauge || !text) return;
+
+            text.textContent = `${roundedVal}%`;
+            gauge.setAttribute('stroke-dasharray', `${roundedVal}, 100`);
+
+            // Adjust gauge color depending on loads
+            if (roundedVal > 85) {
+                gauge.className.baseVal = "text-red-500 transition-all duration-500 ease-out";
+            } else if (roundedVal > 60) {
+                gauge.className.baseVal = "text-amber-500 transition-all duration-500 ease-out";
+            } else {
+                if (type === 'cpu') gauge.className.baseVal = "text-indigo-500 transition-all duration-500 ease-out";
+                else if (type === 'mem') gauge.className.baseVal = "text-purple-500 transition-all duration-500 ease-out";
+                else gauge.className.baseVal = "text-emerald-500 transition-all duration-500 ease-out";
+            }
+        }
+
+        function logToConsole(msg, colorClass) {
+            const logDiv = document.createElement('div');
+            const colorMap = {
+                slate: 'text-slate-400',
+                emerald: 'text-emerald-400',
+                red: 'text-rose-500 font-semibold',
+                amber: 'text-amber-400',
+                sky: 'text-sky-300'
+            };
+            logDiv.className = colorMap[colorClass] || 'text-emerald-400';
+            logDiv.textContent = msg;
+            wsConsole.appendChild(logDiv);
+            wsConsole.scrollTop = wsConsole.scrollHeight;
+        }
+
+        function clearLogs() {
+            wsConsole.innerHTML = '<div class="text-slate-500">Live stream console cleared. Ready.</div>';
+        }
+
+        // Initialize page load
+        window.addEventListener('load', () => {
+            initCharts();
+            connectWebSocket();
+            fetchDriftStatus();
+        });
+    </script>
+</body>
+
+</html>
